@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from detector.mediapipe_detector import MediapipeDetector
+from mediapipe_detector import MediapipeDetector
 import warnings
 
 if __name__ == "__main__":
