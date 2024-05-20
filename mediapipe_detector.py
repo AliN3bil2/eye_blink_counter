@@ -4,8 +4,8 @@ import numpy as np
 import mediapipe as mp
 import math
 import time
-import os
-import pandas as pd    
+import os  
+import pandas as pd
 
 class MediapipeDetector:
     def __init__(self):
@@ -13,6 +13,7 @@ class MediapipeDetector:
         self.start_time_closed = None
         self.blink_count = 0                                   #store number of blinks 
         
+
         self.mp_face_mesh = mp.solutions.face_mesh
         self.mp_drawing = mp.solutions.drawing_utils
         self.divided_ratio=[]
@@ -27,7 +28,7 @@ class MediapipeDetector:
         self.right_eye_normalizing_lst=[386,374,263,362]   #385, 380, 390,362    
         self.left_eye_id_list=[155, 154, 153, 145, 7, 33, 133, 157, 158, 159, 160, 161, 246, 173]
         self.left_eye_normalizing_lst = [159,145,33,133] # eye points: [top, bottom, right, left] 
-        self.triangle_points = [10, 152]                     # Define triangle points here
+        self.triangle_points = [10, 152,245]                     # Define triangle points here
         self.mouth_list=[13,15,96,325]                       #top,bottom,left,right
         self.detector = self.mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1, min_detection_confidence=0.5, min_tracking_confidence=0.5) # use_depth=True
         
@@ -92,9 +93,10 @@ class MediapipeDetector:
     
     # function to give the angle of the face depend on 3-point 
     def fraction(self, detected_face, triangle_points):
-        pt_1 = detected_face.landmark[self.triangle_points[0]].x, detected_face.landmark[self.triangle_points[0]].y, detected_face.landmark[self.triangle_points[0]].z
-        pt_2 = detected_face.landmark[self.triangle_points[1]].x, detected_face.landmark[self.triangle_points[1]].y, detected_face.landmark[self.triangle_points[1]].z
-        pt_3 = (pt_1[0], pt_1[1], pt_1[2] + 4)  # Adding 4 to the z-coordinate of pt_1
+        '''
+        pt_1 = detected_face.landmark[self.triangle_points[0]].x
+        pt_2 = detected_face.landmark[self.triangle_points[1]].x
+        pt_3 = detected_face.landmark[self.triangle_points[1]].x  # Adding 4 to the z-coordinate of pt_1
         vector1 = np.array(pt_2) - np.array(pt_1)
         vector2 = np.array(pt_3) - np.array(pt_2)
         dot_product = np.dot(vector1, vector2)
@@ -104,29 +106,27 @@ class MediapipeDetector:
         angle_radians = np.arccos(cosine_angle)
         angle_degrees = np.degrees(angle_radians)
         return angle_degrees
-    '''
-    #thresh_from_open_to_closed=0.3213890866361416, thresh_from_closed_to_open=0.3800000000000000
-    #to detect eye state (open, close )                                                                                         20 , 21    for closed eye 
-    def detect_eye_state(self, V2H_ratio, previous_state, thresh_from_open_to_closed=0.3213890866361416, thresh_from_closed_to_open=0.3800000000000000):  # 13, 15
-        current_state = self.open
-        if previous_state == current_state:
-            if V2H_ratio <= thresh_from_open_to_closed:
-                current_state = self.closed
-            else:
-                current_state = self.open
-        else:
-            if V2H_ratio > thresh_from_closed_to_open:
-                current_state = self.open
-            else:
-                current_state = self.closed
-        return current_state
-    '''
+        '''
+        x=detected_face.landmark[self.triangle_points[2]].z - detected_face.landmark[self.triangle_points[0]].z
+        y=detected_face.landmark[self.triangle_points[0]].y - detected_face.landmark[self.triangle_points[1]].y
+        z=detected_face.landmark[self.triangle_points[2]].z - detected_face.landmark[self.triangle_points[1]].z
+        
+        dot_product=np.dot(x,y)
+        magnitud1=np.linalg.norm(x)
+        magnitud2=np.linalg.norm(y)
+        cosine_angle = dot_product / (magnitud1 * magnitud2)
+
+        angle_radians = np.arccos(cosine_angle)
+        angle_degrees = np.degrees(angle_radians)
+        return angle_degrees
+
+
+
 # to detect eye state (open, close )                                                                                         20 , 21    for closed eye 
-    def detect_eye_state(self, V2H_ratio, angle_degrees, previous_state, thresh_from_open_to_closed=0.32890866361416, thresh_from_closed_to_open=0.3800000000000000,
+    def detect_eye_state(self, V2H_ratio, angle_degrees, previous_state, thresh_from_open_to_closed=0.33890866361416, thresh_from_closed_to_open=0.3600000000000000,
                      angle_threshold=95):  
         current_state = self.open
         if angle_degrees < angle_threshold:
-        # If the face angle is smaller than the threshold, adjust the threshold for closed eyes
             thresh_from_open_to_closed = 0.3713890866361416
 
 
@@ -142,6 +142,7 @@ class MediapipeDetector:
             else:
                 current_state = self.closed
         return current_state
+    
               
       
  
@@ -183,8 +184,9 @@ class MediapipeDetector:
         #    cv2.circle(img, (int(detected_face.landmark[idx].x * img.shape[1]), int(detected_face.landmark[idx].y * img.shape[0])), 1, (255, 255, 0), cv2.FILLED)
         #for idx in self.right_eye_id_list:
         #    cv2.circle(img, (int(detected_face.landmark[idx].x * img.shape[1]), int(detected_face.landmark[idx].y * img.shape[0])), 1, (255, 255, 0), cv2.FILLED)
-        #for i in range(len(self.triangle_points)):
-        #    cv2.line(img, (int(detected_face.landmark[self.triangle_points[i]].x * img.shape[1]), int(detected_face.landmark[self.triangle_points[i]].y * img.shape[0])), (int(detected_face.landmark[self.triangle_points[(i + 1) % len(self.triangle_points)]].x * img.shape[1]), int(detected_face.landmark[self.triangle_points[(i + 1) % len(self.triangle_points)]].y * img.shape[0])), (0, 255, 0), 2)
+        for i in range(len(self.triangle_points)):
+            cv2.line(img, (int(detected_face.landmark[self.triangle_points[i]].x * img.shape[1]), int(detected_face.landmark[self.triangle_points[i]].y * img.shape[0])), (int(detected_face.landmark[self.triangle_points[(i + 1) % len(self.triangle_points)]].x * img.shape[1]), int(detected_face.landmark[self.triangle_points[(i + 1) % len(self.triangle_points)]].y * img.shape[0])), (0, 255, 0), 2)
+            
         #left_eye_message = "leftClosed" if self.left_eye_state == self.closed else "leftOpen"
         #cv2.putText(img, left_eye_message, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (150, 0, 0), 2)
         #right_eye_message = "rightClosed" if self.right_eye_state == self.closed else "rightOpen"
@@ -212,11 +214,13 @@ class MediapipeDetector:
                 self.left_eye_state = self.detect_eye_state(left_eye_V2H, self.angle_degrees,self.left_eye_state)                  #right eye state
                 self.right_eye_state = self.detect_eye_state(right_eye_V2H,self.angle_degrees, self.right_eye_state)               #left eye state 
                 blink_count = self.detect_blinks(self.previous_eye_state, self.left_eye_state, self.right_eye_state)
-              
-            return img, self.left_eye_state, self.right_eye_state, detected_face #,store    #
+
+            return img, self.left_eye_state, self.right_eye_state, detected_face #,store    
         else:
             warnings.warn('No face detected !!')
         return img, self.left_eye_state, self.right_eye_state, None
+
+
 
 
 
