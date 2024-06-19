@@ -87,7 +87,7 @@ class MediapipeDetector:
     
     # function to give the angle of the face depend on 3-point 
     def fraction(self, detected_face, triangle_points):
-        '''
+        
         pt_1 = detected_face.landmark[self.triangle_points[0]].x, detected_face.landmark[self.triangle_points[0]].y, detected_face.landmark[self.triangle_points[0]].z
         pt_2 = detected_face.landmark[self.triangle_points[1]].x, detected_face.landmark[self.triangle_points[1]].y, detected_face.landmark[self.triangle_points[1]].z
         pt_3 = (pt_1[0], pt_1[1], pt_1[2] + 4)  # Adding 4 to the z-coordinate of pt_1
@@ -114,12 +114,12 @@ class MediapipeDetector:
         angle_degrees = np.degrees(angle_radians)
         return angle_degrees
 
-
+        '''
 
 # to detect eye state (open, close )                                                                                         20 , 21    for closed eye 
 
     def detect_eye_state(self, V2H_ratio, angle_degrees, previous_state, thresh_from_open_to_closed=0.33890866361416, thresh_from_closed_to_open=0.3550000000000000,
-                         angle_threshold=95):
+                         angle_threshold=100):
         current_state = self.open
 
         # Smooth  based on face angle
@@ -129,6 +129,7 @@ class MediapipeDetector:
                 self.smoothed_threshold = thresh_from_open_to_closed 
             else:
                 self.smoothed_threshold = self.smooth_threshold(self.smoothed_threshold, 0.3713890866361416)
+ 
 
         # Determine eye state 
         if previous_state == current_state:
@@ -221,5 +222,8 @@ class MediapipeDetector:
         else:
             warnings.warn('No face detected !!')
         return img, self.left_eye_state, self.right_eye_state, None
+
+
+
 
 
